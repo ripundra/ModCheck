@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ModCheck</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0f11;
+    --surface: #16181c;
+    --border: #2a2d35;
+    --accent: #7fff6e;
+    --accent-dim: #4db84433;
+    --warn: #ffb347;
+    --warn-dim: #ffb34722;
+    --error: #ff5f5f;
+    --error-dim: #ff5f5f22;
+    --text: #e8eaf0;
+    --muted: #666b7a;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 24px 80px;
+  }
+
+  header { width: 100%; max-width: 760px; margin-bottom: 40px; }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 2.4rem;
+    letter-spacing: -1px;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .logo span { color: var(--text); }
+  .subtitle { margin-top: 8px; color: var(--muted); font-size: 0.8rem; }
+
+  .main { width: 100%; max-width: 760px; display: flex; flex-direction: column; gap: 20px; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 4px; }
+  .tab {
+    flex: 1; text-align: center; padding: 9px 12px;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.8rem;
+    border-radius: 7px; cursor: pointer; border: none; background: none;
+    color: var(--muted); transition: background 0.2s, color 0.2s;
+  }
+  .tab.active { background: var(--border); color: var(--text); }
+
+  /* Drop zone */
+  .dropzone {
+    border: 2px dashed var(--border); border-radius: 12px;
+    padding: 44px 32px; text-align: center; cursor: pointer;
+    transition: border-color 0.2s, background 0.2s; position: relative;
+  }
+  .dropzone:hover, .dropzone.drag-over { border-color: var(--accent); background: var(--accent-dim); }
+  .dropzone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .drop-icon { font-size: 2.2rem; margin-bottom: 10px; display: block; }
+  .drop-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; color: var(--text); margin-bottom: 6px; }
+  .drop-hint { font-size: 0.72rem; color: var(--muted); }
+
+  /* Text input tab */
+  .text-input-area {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .text-input-area textarea {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;
+    padding: 12px; resize: vertical; min-height: 120px; outline: none;
+    transition: border-color 0.2s; width: 100%;
+  }
+  .text-input-area textarea:focus { border-color: var(--accent); }
+  .text-input-hint { font-size: 0.72rem; color: var(--muted); }
+  .btn-add-text {
+    background: var(--border); color: var(--text); border: none; border-radius: 8px;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.8rem;
+    padding: 10px 20px; cursor: pointer; align-self: flex-start;
+    transition: background 0.2s;
+  }
+  .btn-add-text:hover { background: #3a3d47; }
+
+  /* Version selector */
+  .version-row { display: flex; gap: 10px; align-items: center; }
+  .version-row label { font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
+  .version-select {
+    flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;
+    padding: 10px 14px; outline: none; transition: border-color 0.2s; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666b7a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center;
+    padding-right: 32px; cursor: pointer;
+  }
+  .version-select:focus { border-color: var(--accent); }
+  .version-select option { background: var(--surface); }
+
+  .btn-check {
+    background: var(--accent); color: #0e0f11; border: none; border-radius: 8px;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.85rem;
+    padding: 10px 22px; cursor: pointer; transition: opacity 0.2s, transform 0.1s; white-space: nowrap;
+  }
+  .btn-check:hover { opacity: 0.85; }
+  .btn-check:active { transform: scale(0.97); }
+  .btn-check:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* Summary */
+  .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; text-align: center; }
+  .summary-num { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.9rem; line-height: 1; }
+  .summary-num.ok { color: var(--accent); }
+  .summary-num.warn { color: var(--warn); }
+  .summary-num.fail { color: var(--error); }
+  .summary-label { font-size: 0.68rem; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Download zip button */
+  .btn-zip {
+    background: var(--surface); color: var(--accent); border: 1px solid var(--accent);
+    border-radius: 8px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.85rem;
+    padding: 11px 24px; cursor: pointer; transition: background 0.2s; width: 100%;
+  }
+  .btn-zip:hover { background: var(--accent-dim); }
+  .btn-zip:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* Mod list */
+  .mod-list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .mod-list-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .clear-btn {
+    background: none; border: none; color: var(--muted); font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: color 0.2s, background 0.2s;
+  }
+  .clear-btn:hover { color: var(--error); background: var(--error-dim); }
+
+  .mod-list { display: flex; flex-direction: column; gap: 7px; }
+
+  .mod-item {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 11px 14px; display: flex; align-items: center; gap: 11px; transition: border-color 0.2s;
+  }
+  .mod-item.ok { border-color: #2a4a28; }
+  .mod-item.warn { border-color: #4a3a1a; }
+  .mod-item.fail { border-color: #4a1f1f; }
+
+  .mod-icon {
+    width: 34px; height: 34px; border-radius: 6px; background: var(--border);
+    flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 1rem;
+  }
+  .mod-icon img { width: 100%; height: 100%; object-fit: cover; }
+
+  .mod-info { flex: 1; min-width: 0; }
+  .mod-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mod-file { font-size: 0.68rem; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .mod-status {
+    font-size: 0.7rem; font-weight: 500; padding: 4px 10px;
+    border-radius: 20px; white-space: nowrap; flex-shrink: 0;
+  }
+  .status-pending { background: var(--border); color: var(--muted); }
+  .status-checking { background: var(--border); color: var(--accent); animation: pulse 1s infinite; }
+  .status-ok { background: var(--accent-dim); color: var(--accent); }
+  .status-warn { background: var(--warn-dim); color: var(--warn); }
+  .status-fail { background: var(--error-dim); color: var(--error); }
+
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+
+  .remove-btn {
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    font-size: 0.95rem; padding: 4px; line-height: 1; border-radius: 4px;
+    transition: color 0.2s; flex-shrink: 0;
+  }
+  .remove-btn:hover { color: var(--error); }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 520px) {
+    body { padding: 28px 14px 60px; }
+    .logo { font-size: 1.8rem; }
+    .version-row { flex-wrap: wrap; }
+    .btn-check { width: 100%; }
+    .summary { grid-template-columns: repeat(3,1fr); gap: 7px; }
+    .summary-num { font-size: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Mod<span>Check</span></div>
+  <div class="subtitle">проверка совместимости модов с версией Minecraft</div>
+</header>
+
+<div class="main">
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" id="tabFiles" onclick="switchTab('files')">📦 Файлы (.jar)</button>
+    <button class="tab" id="tabText" onclick="switchTab('text')">✏️ Ввод текстом</button>
+  </div>
+
+  <!-- Files tab -->
+  <div id="panelFiles">
+    <div class="dropzone" id="dropzone">
+      <input type="file" id="fileInput" multiple>
+      <span class="drop-icon">📦</span>
+      <div class="drop-title">Перетащи .jar файлы сюда</div>
+      <div class="drop-hint">или кликни чтобы выбрать • на телефоне нажми и выбери файлы</div>
+    </div>
+  </div>
+
+  <!-- Text tab -->
+  <div id="panelText" class="hidden">
+    <div class="text-input-area">
+      <div class="text-input-hint">Введи названия модов — каждый с новой строки. Например: <br>Sodium<br>Lithium<br>Iris Shaders</div>
+      <textarea id="textInput" placeholder="Sodium&#10;Lithium&#10;Iris Shaders&#10;..."></textarea>
+      <button class="btn-add-text" onclick="addFromText()">Добавить моды</button>
+    </div>
+  </div>
+
+  <!-- Version selector -->
+  <div class="version-row">
+    <label>Целевая версия</label>
+    <select class="version-select" id="versionSelect">
+      <option value="">загрузка версий...</option>
+    </select>
+    <button class="btn-check" id="checkBtn" disabled onclick="runCheck()">Проверить</button>
+  </div>
+  <label style="display:flex;align-items:center;gap:8px;font-size:0.75rem;color:var(--muted);cursor:pointer;user-select:none;">
+    <input type="checkbox" id="showSnapshots" onchange="rebuildVersionSelect()" style="accent-color:var(--accent);width:14px;height:14px;">
+    показывать снапшоты
+  </label>
+
+  <!-- Summary -->
+  <div id="summaryBlock" class="summary hidden">
+    <div class="summary-card">
+      <div class="summary-num ok" id="countOk">0</div>
+      <div class="summary-label">Совместимы</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num warn" id="countWarn">0</div>
+      <div class="summary-label">Не найдены</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num fail" id="countFail">0</div>
+      <div class="summary-label">Не поддерживают</div>
+    </div>
+  </div>
+
+  <!-- Download zip -->
+  <button class="btn-zip hidden" id="zipBtn" onclick="downloadZip()">⬇ Скачать совместимые моды (.zip)</button>
+
+  <!-- Mod list -->
+  <div id="modListBlock" class="hidden">
+    <div class="mod-list-header">
+      <span class="mod-list-title">Моды (<span id="modCount">0</span>)</span>
+      <button class="clear-btn" onclick="clearAll()">очистить всё</button>
+    </div>
+    <div class="mod-list" id="modList"></div>
+  </div>
+
+</div>
+
+<script>
+let mods = [];
+let currentTab = 'files';
+
+// ── Tabs ──────────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tabFiles').classList.toggle('active', tab === 'files');
+  document.getElementById('tabText').classList.toggle('active', tab === 'text');
+  document.getElementById('panelFiles').classList.toggle('hidden', tab !== 'files');
+  document.getElementById('panelText').classList.toggle('hidden', tab !== 'text');
+}
+
+// ── Load versions from Modrinth ───────────────────────
+let allVersions = [];
+
+async function loadVersions() {
+  const sel = document.getElementById('versionSelect');
+  try {
+    const res = await fetch('https://api.modrinth.com/v2/tag/game_version');
+    allVersions = await res.json();
+    rebuildVersionSelect();
+  } catch {
+    sel.innerHTML = '<option value="">ошибка загрузки версий</option>';
+  }
+}
+
+function rebuildVersionSelect() {
+  const sel = document.getElementById('versionSelect');
+  const showSnap = document.getElementById('showSnapshots').checked;
+  const prev = sel.value;
+  sel.innerHTML = '';
+  const filtered = allVersions.filter(v =>
+    v.version_type === 'release' || (showSnap && v.version_type === 'snapshot')
+  );
+  filtered.forEach(v => {
+    const o = document.createElement('option');
+    o.value = v.version;
+    o.textContent = v.version_type === 'snapshot' ? v.version + ' (snapshot)' : v.version;
+    sel.appendChild(o);
+  });
+  if (prev && filtered.find(v => v.version === prev)) {
+    sel.value = prev;
+  } else {
+    const firstRelease = allVersions.find(v => v.version_type === 'release');
+    sel.value = firstRelease?.version || '';
+  }
+  updateCheckBtn();
+}
+
+loadVersions();
+
+// ── File input ────────────────────────────────────────
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('drag-over');
+  handleFiles([...e.dataTransfer.files]);
+});
+fileInput.addEventListener('change', () => { handleFiles([...fileInput.files]); fileInput.value = ''; });
+
+function handleFiles(files) {
+  const jars = files.filter(f => f.name.endsWith('.jar'));
+  if (!jars.length) return;
+  jars.forEach(file => {
+    if (mods.find(m => m.sourceKey === file.name)) return;
+    addMod({ name: cleanModName(file.name), file, sourceKey: file.name });
+  });
+  showList();
+}
+
+// ── Text input ────────────────────────────────────────
+function addFromText() {
+  const raw = document.getElementById('textInput').value;
+  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  lines.forEach(name => {
+    if (mods.find(m => m.sourceKey === name.toLowerCase())) return;
+    addMod({ name, file: null, sourceKey: name.toLowerCase() });
+  });
+  document.getElementById('textInput').value = '';
+  showList();
+}
+
+// ── Mod management ────────────────────────────────────
+function addMod(data) {
+  const id = Math.random().toString(36).slice(2);
+  const mod = { id, status: 'pending', downloadUrl: null, resolvedName: null, ...data };
+  mods.push(mod);
+  renderMod(mod);
+}
+
+function renderMod(mod) {
+  const el = document.createElement('div');
+  el.className = 'mod-item';
+  el.id = 'mod-' + mod.id;
+  el.innerHTML = `
+    <div class="mod-icon" id="icon-${mod.id}">📦</div>
+    <div class="mod-info">
+      <div class="mod-name" id="name-${mod.id}">${esc(mod.name)}</div>
+      <div class="mod-file">${mod.file ? esc(mod.file.name) : 'текстовый ввод'}</div>
+    </div>
+    <span class="mod-status status-pending" id="status-${mod.id}">ожидание</span>
+    <button class="remove-btn" onclick="removeMod('${mod.id}')" title="Удалить">✕</button>
+  `;
+  document.getElementById('modList').appendChild(el);
+}
+
+function removeMod(id) {
+  mods = mods.filter(m => m.id !== id);
+  document.getElementById('mod-' + id)?.remove();
+  document.getElementById('modCount').textContent = mods.length;
+  if (!mods.length) {
+    document.getElementById('modListBlock').classList.add('hidden');
+    document.getElementById('summaryBlock').classList.add('hidden');
+    document.getElementById('zipBtn').classList.add('hidden');
+  }
+  updateCheckBtn();
+}
+
+function clearAll() {
+  mods = [];
+  document.getElementById('modList').innerHTML = '';
+  document.getElementById('modListBlock').classList.add('hidden');
+  document.getElementById('summaryBlock').classList.add('hidden');
+  document.getElementById('zipBtn').classList.add('hidden');
+  updateCheckBtn();
+}
+
+function showList() {
+  document.getElementById('modListBlock').classList.remove('hidden');
+  document.getElementById('modCount').textContent = mods.length;
+  document.getElementById('summaryBlock').classList.add('hidden');
+  document.getElementById('zipBtn').classList.add('hidden');
+  updateCheckBtn();
+}
+
+function updateCheckBtn() {
+  const ver = document.getElementById('versionSelect').value;
+  document.getElementById('checkBtn').disabled = !mods.length || !ver;
+}
+document.getElementById('versionSelect').addEventListener('change', updateCheckBtn);
+
+// ── Check ─────────────────────────────────────────────
+async function runCheck() {
+  const version = document.getElementById('versionSelect').value;
+  if (!version || !mods.length) return;
+
+  const btn = document.getElementById('checkBtn');
+  btn.disabled = true;
+  btn.textContent = 'Проверяю...';
+  document.getElementById('summaryBlock').classList.add('hidden');
+  document.getElementById('zipBtn').classList.add('hidden');
+
+  mods.forEach(m => { m.downloadUrl = null; setStatus(m, 'checking', 'проверка...'); });
+
+  let ok = 0, warn = 0, fail = 0;
+
+  for (const mod of mods) {
+    const result = await checkMod(mod, version);
+    if (result === 'ok')      { ok++;   setStatus(mod, 'ok',   '✓ совместим'); }
+    else if (result === 'fail'){ fail++; setStatus(mod, 'fail', '✗ нет версии ' + version); }
+    else                       { warn++; setStatus(mod, 'warn', '? не найден'); }
+  }
+
+  document.getElementById('countOk').textContent = ok;
+  document.getElementById('countWarn').textContent = warn;
+  document.getElementById('countFail').textContent = fail;
+  document.getElementById('summaryBlock').classList.remove('hidden');
+
+  const hasDownloadable = mods.some(m => m.downloadUrl);
+  document.getElementById('zipBtn').classList.toggle('hidden', !hasDownloadable);
+
+  btn.disabled = false;
+  btn.textContent = 'Проверить';
+}
+
+function setStatus(mod, type, text) {
+  const el = document.getElementById('mod-' + mod.id);
+  const st = document.getElementById('status-' + mod.id);
+  if (!el || !st) return;
+  el.className = 'mod-item ' + (type === 'ok' ? 'ok' : type === 'fail' ? 'fail' : type === 'warn' ? 'warn' : '');
+  st.className = 'mod-status status-' + type;
+  st.textContent = text;
+}
+
+async function checkMod(mod, targetVersion) {
+  const query = mod.file ? cleanModName(mod.file.name) : mod.name;
+  try {
+    const searchRes = await fetch(`https://api.modrinth.com/v2/search?query=${encodeURIComponent(query)}&limit=5&facets=${encodeURIComponent(JSON.stringify([["project_type:mod"]]))}`);
+    if (!searchRes.ok) return 'unknown';
+    const searchData = await searchRes.json();
+    if (!searchData.hits?.length) return 'unknown';
+
+    const project = searchData.hits[0];
+
+    // Обновить иконку
+    if (project.icon_url) {
+      const ic = document.getElementById('icon-' + mod.id);
+      if (ic) ic.innerHTML = `<img src="${project.icon_url}" alt="">`;
+    }
+    // Обновить имя
+    const nm = document.getElementById('name-' + mod.id);
+    if (nm) nm.textContent = project.title;
+    mod.resolvedName = project.title;
+
+    // Проверить версии
+    const verRes = await fetch(`https://api.modrinth.com/v2/project/${project.project_id}/version?game_versions=${encodeURIComponent(JSON.stringify([targetVersion]))}`);
+    if (!verRes.ok) return 'fail';
+    const versions = await verRes.json();
+    if (!versions.length) return 'fail';
+
+    // Сохраняем ссылку на скачивание первого файла
+    const file = versions[0]?.files?.[0];
+    if (file?.url) mod.downloadUrl = { url: file.url, filename: file.filename };
+
+    return 'ok';
+  } catch { return 'unknown'; }
+}
+
+// ── ZIP download ──────────────────────────────────────
+async function downloadZip() {
+  const btn = document.getElementById('zipBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Собираю архив...';
+
+  const version = document.getElementById('versionSelect').value;
+  const zip = new JSZip();
+  const folder = zip.folder('mods');
+
+  const toDownload = mods.filter(m => m.downloadUrl);
+
+  for (const mod of toDownload) {
+    try {
+      const res = await fetch(mod.downloadUrl.url);
+      const blob = await res.blob();
+      folder.file(mod.downloadUrl.filename, blob);
+    } catch { /* пропустить если не удалось */ }
+  }
+
+  const content = await zip.generateAsync({ type: 'blob' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(content);
+  a.download = `mods-${version}.zip`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+
+  btn.disabled = false;
+  btn.textContent = '⬇ Скачать совместимые моды (.zip)';
+}
+
+// ── Utils ─────────────────────────────────────────────
+function cleanModName(filename) {
+  return filename
+    .replace('.jar', '')
+    .replace(/[-_](forge|fabric|neoforge|quilt|bukkit|spigot)/gi, '')
+    .replace(/[-_]v?[\d.]+.*/g, '')
+    .replace(/[-_]+/g, ' ')
+    .trim();
+}
+function esc(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>
