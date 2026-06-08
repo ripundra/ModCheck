@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ModCheck</title>
+<title>Mod Version Checker</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -27,7 +27,7 @@
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Inter', sans-serif;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -35,110 +35,166 @@
     padding: 48px 24px 80px;
   }
 
-  header { width: 100%; max-width: 760px; margin-bottom: 40px; }
+  header { width: 100%; max-width: 760px; margin-bottom: 36px; display: flex; align-items: flex-start; justify-content: space-between; }
+  .header-left {}
+  .logo { font-weight: 800; font-size: 1.8rem; letter-spacing: -0.5px; line-height: 1; }
+  .logo-mod { color: var(--accent); }
+  .logo-rest { color: var(--text); }
+  .subtitle { margin-top: 6px; color: var(--muted); font-size: 0.78rem; }
 
-  .logo {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 2.4rem;
-    letter-spacing: -1px;
-    color: var(--accent);
-    line-height: 1;
-  }
-  .logo span { color: var(--text); }
-  .subtitle { margin-top: 8px; color: var(--muted); font-size: 0.8rem; }
+  .main { width: 100%; max-width: 760px; display: flex; flex-direction: column; gap: 16px; }
 
-  .main { width: 100%; max-width: 760px; display: flex; flex-direction: column; gap: 20px; }
 
-  /* Tabs */
-  .tabs { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 4px; }
-  .tab {
-    flex: 1; text-align: center; padding: 9px 12px;
-    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.8rem;
-    border-radius: 7px; cursor: pointer; border: none; background: none;
-    color: var(--muted); transition: background 0.2s, color 0.2s;
-  }
-  .tab.active { background: var(--border); color: var(--text); }
 
   /* Drop zone */
   .dropzone {
     border: 2px dashed var(--border); border-radius: 12px;
-    padding: 44px 32px; text-align: center; cursor: pointer;
+    padding: 40px 32px; text-align: center; cursor: pointer;
     transition: border-color 0.2s, background 0.2s; position: relative;
   }
   .dropzone:hover, .dropzone.drag-over { border-color: var(--accent); background: var(--accent-dim); }
   .dropzone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-  .drop-icon { font-size: 2.2rem; margin-bottom: 10px; display: block; }
-  .drop-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; color: var(--text); margin-bottom: 6px; }
+  .drop-icon { font-size: 2rem; margin-bottom: 10px; display: block; }
+  .drop-title { font-weight: 700; font-size: 0.95rem; color: var(--text); margin-bottom: 6px; }
   .drop-hint { font-size: 0.72rem; color: var(--muted); }
 
-  /* Text input tab */
-  .text-input-area {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px;
-    display: flex; flex-direction: column; gap: 10px;
-  }
-  .text-input-area textarea {
-    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-    color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;
-    padding: 12px; resize: vertical; min-height: 120px; outline: none;
-    transition: border-color 0.2s; width: 100%;
-  }
-  .text-input-area textarea:focus { border-color: var(--accent); }
-  .text-input-hint { font-size: 0.72rem; color: var(--muted); }
-  .btn-add-text {
-    background: var(--border); color: var(--text); border: none; border-radius: 8px;
-    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.8rem;
-    padding: 10px 20px; cursor: pointer; align-self: flex-start;
-    transition: background 0.2s;
-  }
-  .btn-add-text:hover { background: #3a3d47; }
-
-  /* Version selector */
-  .version-row { display: flex; gap: 10px; align-items: center; }
-  .version-row label { font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
-  .version-select {
+  /* Search tab */
+  .search-area { display: flex; flex-direction: column; gap: 10px; }
+  .search-input-row { display: flex; gap: 8px; }
+  .search-input {
     flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
-    color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;
-    padding: 10px 14px; outline: none; transition: border-color 0.2s; appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666b7a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat; background-position: right 12px center;
-    padding-right: 32px; cursor: pointer;
+    color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.85rem;
+    padding: 10px 14px; outline: none; transition: border-color 0.2s;
   }
-  .version-select:focus { border-color: var(--accent); }
-  .version-select option { background: var(--surface); }
+  .search-input:focus { border-color: var(--accent); }
+  .btn-search {
+    background: var(--border); color: var(--text); border: none; border-radius: 8px;
+    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 0.82rem;
+    padding: 10px 18px; cursor: pointer; transition: background 0.2s; white-space: nowrap;
+  }
+  .btn-search:hover { background: #3a3d47; }
+
+
+
+  /* Search results */
+  .search-results { display: flex; flex-direction: column; gap: 6px; }
+  .search-result-item {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; display: flex; align-items: center; gap: 10px; cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .search-result-item:hover { border-color: var(--accent); }
+  .search-result-item.added { border-color: #2a4a28; opacity: 0.6; cursor: default; }
+  .search-result-icon { width: 32px; height: 32px; border-radius: 6px; background: var(--border); flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; }
+  .search-result-icon img { width: 100%; height: 100%; object-fit: cover; }
+  .search-result-info { flex: 1; min-width: 0; }
+  .search-result-name { font-weight: 600; font-size: 0.85rem; }
+  .search-result-desc { font-size: 0.7rem; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .search-result-add { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent); border-radius: 6px; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 0.72rem; padding: 4px 10px; cursor: pointer; flex-shrink: 0; transition: background 0.15s; white-space: nowrap; }
+  .search-result-add:hover { background: var(--accent); color: #0e0f11; }
+  .search-result-add.added-tag { background: none; border-color: var(--border); color: var(--muted); cursor: default; }
+
+  /* Version picker */
+  .version-section { display: flex; flex-direction: column; gap: 8px; }
+  .version-top-row { display: flex; gap: 10px; align-items: stretch; }
+  .version-top-row label { font-size: 0.78rem; color: var(--muted); white-space: nowrap; align-self: center; }
+
+  /* Custom version picker */
+  .ver-picker { flex: 1; position: relative; }
+  .ver-picker-btn {
+    width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 500;
+    padding: 10px 36px 10px 14px; cursor: pointer; text-align: left;
+    transition: border-color 0.2s; position: relative; user-select: none;
+  }
+  .ver-picker-btn::after {
+    content: '▾'; position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    color: var(--muted); font-size: 0.8rem; pointer-events: none;
+  }
+  .ver-picker-btn.open { border-color: var(--accent); }
+  .ver-picker-popup {
+    display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 200;
+    background: var(--surface); border: 1px solid var(--accent); border-radius: 10px;
+    box-shadow: 0 8px 32px #00000088; overflow: hidden;
+  }
+  .ver-picker-popup.open { display: flex; flex-direction: column; }
+  .ver-picker-search {
+    padding: 8px 10px; border-bottom: 1px solid var(--border);
+  }
+  .ver-picker-search input {
+    width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.8rem;
+    padding: 6px 10px; outline: none;
+  }
+  .ver-picker-search input:focus { border-color: var(--accent); }
+  .ver-picker-list {
+    max-height: 220px; overflow-y: auto; position: relative;
+  }
+  .ver-picker-list::-webkit-scrollbar { width: 6px; }
+  .ver-picker-list::-webkit-scrollbar-track { background: var(--surface); }
+  .ver-picker-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .ver-picker-list::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+  .ver-group-label {
+    font-size: 0.62rem; color: var(--muted); padding: 6px 12px 2px;
+    text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;
+    position: sticky; top: 0; background: var(--surface); z-index: 1;
+  }
+  .ver-opt {
+    padding: 7px 14px; font-size: 0.82rem; cursor: pointer;
+    transition: background 0.1s; font-family: 'Inter', sans-serif;
+  }
+  .ver-opt:hover { background: var(--border); }
+  .ver-opt.selected { color: var(--accent); background: var(--accent-dim); font-weight: 600; }
+  .ver-opt.hidden-snap { display: none; }
 
   .btn-check {
     background: var(--accent); color: #0e0f11; border: none; border-radius: 8px;
-    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.85rem;
+    font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.85rem;
     padding: 10px 22px; cursor: pointer; transition: opacity 0.2s, transform 0.1s; white-space: nowrap;
   }
   .btn-check:hover { opacity: 0.85; }
   .btn-check:active { transform: scale(0.97); }
   .btn-check:disabled { opacity: 0.35; cursor: not-allowed; }
 
+  .controls-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .snap-label { display: flex; align-items: center; gap: 7px; font-size: 0.75rem; color: var(--muted); cursor: pointer; user-select: none; }
+  .snap-label input { accent-color: var(--accent); width: 14px; height: 14px; }
+
+  /* Loader filter */
+  .loader-section { display: flex; flex-direction: column; gap: 6px; }
+  .loader-section-label { font-size: 0.72rem; color: var(--muted); font-weight: 500; }
+  .loader-row { display: flex; gap: 5px; flex-wrap: wrap; }
+  .loader-btn {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+    color: var(--muted); font-family: 'Inter', sans-serif; font-size: 0.72rem; font-weight: 500;
+    padding: 5px 12px; cursor: pointer; transition: all 0.15s;
+  }
+  .loader-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
   /* Summary */
   .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
   .summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; text-align: center; }
-  .summary-num { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.9rem; line-height: 1; }
+  .summary-num { font-weight: 800; font-size: 1.9rem; line-height: 1; }
   .summary-num.ok { color: var(--accent); }
   .summary-num.warn { color: var(--warn); }
   .summary-num.fail { color: var(--error); }
-  .summary-label { font-size: 0.68rem; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .summary-label { font-size: 0.66rem; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
 
   /* Download zip button */
   .btn-zip {
     background: var(--surface); color: var(--accent); border: 1px solid var(--accent);
-    border-radius: 8px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.85rem;
+    border-radius: 8px; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.85rem;
     padding: 11px 24px; cursor: pointer; transition: background 0.2s; width: 100%;
   }
   .btn-zip:hover { background: var(--accent-dim); }
   .btn-zip:disabled { opacity: 0.35; cursor: not-allowed; }
+  .zip-size { font-size: 0.72rem; color: var(--muted); margin-bottom: 6px; }
 
   /* Mod list */
   .mod-list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-  .mod-list-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .mod-list-title { font-weight: 700; font-size: 0.82rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
   .clear-btn {
-    background: none; border: none; color: var(--muted); font-family: 'JetBrains Mono', monospace;
+    background: none; border: none; color: var(--muted); font-family: 'Inter', sans-serif;
     font-size: 0.72rem; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: color 0.2s, background 0.2s;
   }
   .clear-btn:hover { color: var(--error); background: var(--error-dim); }
@@ -146,26 +202,25 @@
   .mod-list { display: flex; flex-direction: column; gap: 7px; }
 
   .mod-item {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
-    padding: 11px 14px; display: flex; align-items: center; gap: 11px; transition: border-color 0.2s;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;
+    transition: border-color 0.2s;
   }
   .mod-item.ok { border-color: #2a4a28; }
   .mod-item.warn { border-color: #4a3a1a; }
   .mod-item.fail { border-color: #4a1f1f; }
 
-  .mod-icon {
-    width: 34px; height: 34px; border-radius: 6px; background: var(--border);
-    flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 1rem;
-  }
+  .mod-top { display: flex; align-items: flex-start; gap: 11px; }
+  .mod-icon { width: 36px; height: 36px; border-radius: 7px; background: var(--border); flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
   .mod-icon img { width: 100%; height: 100%; object-fit: cover; }
-
-  .mod-info { flex: 1; min-width: 0; }
-  .mod-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .mod-file { font-size: 0.68rem; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mod-middle { flex: 1; min-width: 0; }
+  .mod-name { font-weight: 700; font-size: 0.88rem; word-break: break-word; line-height: 1.3; }
+  .mod-file { font-size: 0.67rem; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mod-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
 
   .mod-status {
-    font-size: 0.7rem; font-weight: 500; padding: 4px 10px;
-    border-radius: 20px; white-space: nowrap; flex-shrink: 0;
+    font-size: 0.7rem; font-weight: 600; padding: 4px 10px;
+    border-radius: 20px; white-space: nowrap;
   }
   .status-pending { background: var(--border); color: var(--muted); }
   .status-checking { background: var(--border); color: var(--accent); animation: pulse 1s infinite; }
@@ -177,19 +232,80 @@
 
   .remove-btn {
     background: none; border: none; color: var(--muted); cursor: pointer;
-    font-size: 0.95rem; padding: 4px; line-height: 1; border-radius: 4px;
-    transition: color 0.2s; flex-shrink: 0;
+    font-size: 0.9rem; padding: 2px 4px; line-height: 1; border-radius: 4px;
+    transition: color 0.2s;
   }
   .remove-btn:hover { color: var(--error); }
+  .info-btn {
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    font-size: 0.88rem; padding: 2px 4px; line-height: 1; border-radius: 4px;
+    transition: color 0.2s;
+  }
+  .info-btn:hover { color: var(--accent); }
+  .info-btn.active { color: var(--accent); }
+  .mod-info-popup {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; font-size: 0.73rem; color: var(--muted);
+    display: flex; flex-direction: column; gap: 5px; margin-top: 4px;
+  }
+  .mod-info-popup.hidden { display: none; }
+  .info-row { display: flex; justify-content: space-between; gap: 8px; }
+  .info-label { color: var(--muted); }
+  .info-val { color: var(--text); font-weight: 500; text-align: right; }
+
+  /* Mod bottom */
+  .mod-bottom { display: none; flex-direction: column; gap: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
+  .mod-bottom.visible { display: flex; }
+  .mod-bottom-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 8px; flex-wrap: wrap; }
+  .mod-left-links { display: flex; flex-direction: column; gap: 3px; }
+  .modrinth-link { font-size: 0.7rem; color: var(--accent); text-decoration: none; opacity: 0.75; transition: opacity 0.15s; }
+  .modrinth-link:hover { opacity: 1; }
+  .ver-toggle { background: none; border: none; color: var(--muted); font-family: 'Inter', sans-serif; font-size: 0.7rem; cursor: pointer; padding: 0; text-align: left; transition: color 0.15s; }
+  .ver-toggle:hover { color: var(--text); }
+
+  /* Loader tags on card */
+  .mod-loader-tags { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
+  .loader-tag { font-size: 0.62rem; padding: 2px 8px; border-radius: 10px; background: var(--border); color: var(--muted); font-weight: 500; }
+  .loader-tag.fabric { background: #1a3a4a; color: #5bc8f5; }
+  .loader-tag.forge { background: #2e2a1a; color: #c8a84b; }
+  .loader-tag.neoforge { background: #2e1f1a; color: #e87d4a; }
+  .loader-tag.quilt { background: #2a1a3a; color: #a87de8; }
+  .loader-tag.liteloader { background: #1f2e1a; color: #7de87d; }
+
+  /* Version tags */
+  .ver-tags-list { display: none; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+  .ver-tags-list.open { display: flex; }
+  .ver-tag { font-size: 0.63rem; padding: 2px 7px; border-radius: 10px; background: var(--border); color: var(--muted); }
+  .ver-tag.release { background: var(--accent-dim); color: var(--accent); }
 
   .hidden { display: none !important; }
 
+  /* Sticky search */
+  .sticky-search {
+    position: sticky; top: 12px; z-index: 100;
+    background: var(--bg); padding-bottom: 6px;
+  }
+  .sticky-search .search-input {
+    width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.85rem;
+    padding: 11px 16px; outline: none; transition: border-color 0.2s;
+    box-shadow: 0 2px 12px #00000055;
+  }
+  .sticky-search .search-input:focus { border-color: var(--accent); }
+  .search-results {
+    position: absolute; top: calc(100% - 2px); left: 0; right: 0;
+    background: var(--surface); border: 1px solid var(--accent); border-radius: 0 0 10px 10px;
+    box-shadow: 0 8px 24px #00000077; z-index: 101; max-height: 320px; overflow-y: auto;
+    display: none;
+  }
+  .search-results.visible { display: block; }
+
   @media (max-width: 520px) {
-    body { padding: 28px 14px 60px; }
-    .logo { font-size: 1.8rem; }
-    .version-row { flex-wrap: wrap; }
+    body { padding: 24px 12px 60px; }
+    .logo { font-size: 1.5rem; }
+    .version-top-row { flex-wrap: wrap; }
     .btn-check { width: 100%; }
-    .summary { grid-template-columns: repeat(3,1fr); gap: 7px; }
+    .summary { gap: 7px; }
     .summary-num { font-size: 1.5rem; }
   }
 </style>
@@ -197,44 +313,68 @@
 <body>
 
 <header>
-  <div class="logo">Mod<span>Check</span></div>
-  <div class="subtitle">проверка совместимости модов с версией Minecraft</div>
+  <div class="header-left">
+    <div class="logo"><span class="logo-mod">Mod</span><span class="logo-rest"> Version Checker</span></div>
+    <div class="subtitle">проверка совместимости модов с версией Minecraft</div>
+  </div>
 </header>
 
 <div class="main">
 
-  <!-- Tabs -->
-  <div class="tabs">
-    <button class="tab active" id="tabFiles" onclick="switchTab('files')">📦 Файлы (.jar)</button>
-    <button class="tab" id="tabText" onclick="switchTab('text')">✏️ Ввод текстом</button>
+  <!-- Sticky search bar -->
+  <div class="sticky-search">
+    <input class="search-input" id="searchInput" type="text" placeholder="🔍 Поиск мода для добавления..." oninput="onSearchInput()">
+    <div class="search-results" id="searchResults"></div>
   </div>
 
-  <!-- Files tab -->
+  <!-- Tabs -->
+  <!-- Drop zone -->
   <div id="panelFiles">
     <div class="dropzone" id="dropzone">
       <input type="file" id="fileInput" multiple>
       <span class="drop-icon">📦</span>
       <div class="drop-title">Перетащи .jar файлы сюда</div>
-      <div class="drop-hint">или кликни чтобы выбрать • на телефоне нажми и выбери файлы</div>
+      <div class="drop-hint">или кликни чтобы выбрать</div>
     </div>
   </div>
 
-  <!-- Text tab -->
-  <div id="panelText" class="hidden">
-    <div class="text-input-area">
-      <div class="text-input-hint">Введи названия модов — каждый с новой строки. Например: <br>Sodium<br>Lithium<br>Iris Shaders</div>
-      <textarea id="textInput" placeholder="Sodium&#10;Lithium&#10;Iris Shaders&#10;..."></textarea>
-      <button class="btn-add-text" onclick="addFromText()">Добавить моды</button>
+
+
+  <!-- Version picker -->
+  <div class="version-section">
+    <div class="version-top-row">
+      <label>Целевая версия</label>
+      <div class="ver-picker" id="verPicker">
+        <button class="ver-picker-btn" id="verPickerBtn" onclick="toggleVerPicker()" type="button">загрузка...</button>
+        <div class="ver-picker-popup" id="verPickerPopup">
+          <div class="ver-picker-search">
+            <input type="text" id="verSearch" placeholder="Поиск версии..." oninput="filterVersions()" inputmode="none" autocomplete="off">
+          </div>
+          <div class="ver-picker-list" id="verPickerList"></div>
+        </div>
+      </div>
+      <button class="btn-check" id="checkBtn" disabled onclick="runCheck()">Проверить</button>
+    </div>
+    <div class="controls-row">
+      <label class="snap-label">
+        <input type="checkbox" id="showSnapshots" onchange="renderVersionList()">
+        показывать снапшоты
+      </label>
     </div>
   </div>
 
-  <!-- Version selector -->
-  <div class="version-row">
-    <label>Целевая версия</label>
-    <select class="version-select" id="versionSelect">
-      <option value="">загрузка версий...</option>
-    </select>
-    <button class="btn-check" id="checkBtn" disabled onclick="runCheck()">Проверить</button>
+  <!-- Loader filter -->
+  <div class="loader-section">
+    <div class="loader-section-label">Загрузчик</div>
+    <div class="loader-row" id="loaderRow">
+      <button class="loader-btn active" data-loader="" onclick="toggleLoader(this)">Любой</button>
+      <button class="loader-btn" data-loader="fabric" onclick="toggleLoader(this)">Fabric</button>
+      <button class="loader-btn" data-loader="forge" onclick="toggleLoader(this)">Forge</button>
+      <button class="loader-btn" data-loader="neoforge" onclick="toggleLoader(this)">NeoForge</button>
+      <button class="loader-btn" data-loader="quilt" onclick="toggleLoader(this)">Quilt</button>
+      <button class="loader-btn" data-loader="liteloader" onclick="toggleLoader(this)">LiteLoader</button>
+      <button class="loader-btn" data-loader="rift" onclick="toggleLoader(this)">Rift</button>
+    </div>
   </div>
 
   <!-- Summary -->
@@ -254,7 +394,10 @@
   </div>
 
   <!-- Download zip -->
-  <button class="btn-zip hidden" id="zipBtn" onclick="downloadZip()">⬇ Скачать совместимые моды (.zip)</button>
+  <div id="zipSection" class="hidden">
+    <div class="zip-size" id="zipSize"></div>
+    <button class="btn-zip" id="zipBtn" onclick="downloadZip()">⬇ Скачать совместимые моды (.zip)</button>
+  </div>
 
   <!-- Mod list -->
   <div id="modListBlock" class="hidden">
@@ -269,125 +412,287 @@
 
 <script>
 let mods = [];
-let currentTab = 'files';
+let allVersions = [];
+let selectedVersion = '';
+let searchTimer = null;
 
-// ── Tabs ──────────────────────────────────────────────
-function switchTab(tab) {
-  currentTab = tab;
-  document.getElementById('tabFiles').classList.toggle('active', tab === 'files');
-  document.getElementById('tabText').classList.toggle('active', tab === 'text');
-  document.getElementById('panelFiles').classList.toggle('hidden', tab !== 'files');
-  document.getElementById('panelText').classList.toggle('hidden', tab !== 'text');
-}
 
-// ── Load versions from Modrinth ───────────────────────
+
+// ── Version picker ─────────────────────────────────────
 async function loadVersions() {
-  const sel = document.getElementById('versionSelect');
   try {
     const res = await fetch('https://api.modrinth.com/v2/tag/game_version');
-    const data = await res.json();
-    // data = [{version, version_type, ...}]
-    // version_type: "release" | "snapshot" | "alpha" | "beta"
-    sel.innerHTML = '';
-
-    const releases = data.filter(v => v.version_type === 'release');
-    const snapshots = data.filter(v => v.version_type === 'snapshot');
-
-    const grpR = document.createElement('optgroup');
-    grpR.label = 'Релизы';
-    releases.forEach(v => {
-      const o = document.createElement('option');
-      o.value = v.version;
-      o.textContent = v.version;
-      grpR.appendChild(o);
-    });
-    sel.appendChild(grpR);
-
-    const grpS = document.createElement('optgroup');
-    grpS.label = 'Снапшоты';
-    snapshots.forEach(v => {
-      const o = document.createElement('option');
-      o.value = v.version;
-      o.textContent = v.version;
-      grpS.appendChild(o);
-    });
-    sel.appendChild(grpS);
-
-    sel.value = releases[0]?.version || '';
-    updateCheckBtn();
+    allVersions = await res.json();
+    renderVersionList();
   } catch {
-    sel.innerHTML = '<option value="">ошибка загрузки версий</option>';
+    document.getElementById('verPickerBtn').textContent = 'ошибка загрузки';
   }
 }
+
+function renderVersionList() {
+  const list = document.getElementById('verPickerList');
+  if (!list) return;
+  const showSnap = document.getElementById('showSnapshots')?.checked || false;
+  const query = (document.getElementById('verSearch')?.value || '').toLowerCase();
+  list.innerHTML = '';
+
+  let lastType = null;
+  allVersions.forEach(v => {
+    const isSnap = v.version_type !== 'release';
+    if (isSnap && !showSnap) return;
+    if (query && !v.version.toLowerCase().includes(query)) return;
+
+    if (v.version_type !== lastType) {
+      const lbl = document.createElement('div');
+      lbl.className = 'ver-group-label';
+      lbl.textContent = v.version_type === 'release' ? 'Релизы' : 'Снапшоты';
+      list.appendChild(lbl);
+      lastType = v.version_type;
+    }
+    const opt = document.createElement('div');
+    opt.className = 'ver-opt' + (v.version === selectedVersion ? ' selected' : '');
+    opt.textContent = v.version;
+    opt.dataset.value = v.version;
+    opt.onclick = () => selectVersion(v.version);
+    list.appendChild(opt);
+  });
+
+  if (!selectedVersion) {
+    const first = allVersions.find(v => v.version_type === 'release');
+    if (first) selectVersion(first.version);
+  }
+}
+
+function filterVersions() { renderVersionList(); }
+
+function selectVersion(ver) {
+  selectedVersion = ver;
+  document.getElementById('verPickerBtn').textContent = ver;
+  closeVerPicker();
+  document.querySelectorAll('#verPickerList .ver-opt').forEach(o => {
+    o.classList.toggle('selected', o.dataset.value === ver);
+  });
+  updateCheckBtn();
+}
+
+function toggleVerPicker() {
+  const popup = document.getElementById('verPickerPopup');
+  const btn = document.getElementById('verPickerBtn');
+  const open = !popup.classList.contains('open');
+  popup.classList.toggle('open', open);
+  btn.classList.toggle('open', open);
+  if (open) {
+    // scroll selected into view (no autofocus - prevents keyboard popup on mobile)
+    setTimeout(() => {
+      const sel = document.querySelector('#verPickerList .ver-opt.selected');
+      if (sel) sel.scrollIntoView({ block: 'center' });
+    }, 50);
+  }
+}
+
+function closeVerPicker() {
+  document.getElementById('verPickerPopup').classList.remove('open');
+  document.getElementById('verPickerBtn').classList.remove('open');
+}
+
+document.addEventListener('click', e => {
+  if (!document.getElementById('verPicker').contains(e.target)) closeVerPicker();
+});
+
 loadVersions();
 
-// ── File input ────────────────────────────────────────
+// ── File input ─────────────────────────────────────────
 const dropzone = document.getElementById('dropzone');
 const fileInput = document.getElementById('fileInput');
-
 dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
 dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
-dropzone.addEventListener('drop', e => {
-  e.preventDefault();
-  dropzone.classList.remove('drag-over');
-  handleFiles([...e.dataTransfer.files]);
-});
+dropzone.addEventListener('drop', e => { e.preventDefault(); dropzone.classList.remove('drag-over'); handleFiles([...e.dataTransfer.files]); });
 fileInput.addEventListener('change', () => { handleFiles([...fileInput.files]); fileInput.value = ''; });
 
-function handleFiles(files) {
+async function handleFiles(files) {
   const jars = files.filter(f => f.name.endsWith('.jar'));
-  if (!jars.length) return;
-  jars.forEach(file => {
-    if (mods.find(m => m.sourceKey === file.name)) return;
-    addMod({ name: cleanModName(file.name), file, sourceKey: file.name });
-  });
+  for (const file of jars) {
+    if (mods.find(m => m.sourceKey === file.name)) continue;
+    const meta = await readJarMeta(file);
+    addMod({ name: meta.name, modId: meta.modId, file, sourceKey: file.name });
+  }
   showList();
 }
 
-// ── Text input ────────────────────────────────────────
-function addFromText() {
-  const raw = document.getElementById('textInput').value;
-  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
-  lines.forEach(name => {
-    if (mods.find(m => m.sourceKey === name.toLowerCase())) return;
-    addMod({ name, file: null, sourceKey: name.toLowerCase() });
-  });
-  document.getElementById('textInput').value = '';
+async function readJarMeta(file) {
+  const fallback = { name: cleanModName(file.name), modId: null };
+  try {
+    const zip = await JSZip.loadAsync(file);
+    // Try fabric.mod.json first
+    const fabricJson = zip.file('fabric.mod.json');
+    if (fabricJson) {
+      const text = await fabricJson.async('text');
+      const data = JSON.parse(text);
+      return { name: data.name || data.id || fallback.name, modId: data.id || null };
+    }
+    // Try quilt.mod.json
+    const quiltJson = zip.file('quilt.mod.json');
+    if (quiltJson) {
+      const text = await quiltJson.async('text');
+      const data = JSON.parse(text);
+      const meta = data.quilt_loader?.metadata || data;
+      return { name: meta.name || data.quilt_loader?.id || fallback.name, modId: data.quilt_loader?.id || null };
+    }
+    // Try META-INF/mods.toml (Forge/NeoForge)
+    const forgeToml = zip.file('META-INF/mods.toml');
+    if (forgeToml) {
+      const text = await forgeToml.async('text');
+      const nameMatch = text.match(/displayName\s*=\s*["']?([^"'
+]+)["']?/);
+      const idMatch = text.match(/modId\s*=\s*["']([^"']+)["']/);
+      return {
+        name: nameMatch?.[1]?.trim() || fallback.name,
+        modId: idMatch?.[1] || null
+      };
+    }
+    // Try mcmod.info (old Forge 1.12-)
+    const mcmod = zip.file('mcmod.info');
+    if (mcmod) {
+      const text = await mcmod.async('text');
+      const data = JSON.parse(text);
+      const entry = Array.isArray(data) ? data[0] : data.modList?.[0];
+      if (entry) return { name: entry.name || fallback.name, modId: entry.modid || null };
+    }
+  } catch {}
+  return fallback;
+}
+
+// ── Search ─────────────────────────────────────────────
+function onSearchInput() {
+  clearTimeout(searchTimer);
+  const q = document.getElementById('searchInput').value.trim();
+  const resultsEl = document.getElementById('searchResults');
+  if (q.length < 2) { resultsEl.innerHTML = ''; resultsEl.classList.remove('visible'); return; }
+  searchTimer = setTimeout(doSearch, 400);
+}
+
+// Close search on outside click
+document.addEventListener('click', e => {
+  const sticky = document.querySelector('.sticky-search');
+  if (sticky && !sticky.contains(e.target)) {
+    document.getElementById('searchResults').classList.remove('visible');
+  }
+});
+
+async function doSearch() {
+  const q = document.getElementById('searchInput').value.trim();
+  if (!q) return;
+  const loader = getActiveLoader();
+  const facets = [["project_type:mod"]];
+  if (loader) facets.push(["categories:" + loader]);
+  const resultsEl = document.getElementById('searchResults');
+  resultsEl.innerHTML = '<div style="font-size:0.78rem;color:var(--muted);padding:10px 14px;">Поиск...</div>';
+  resultsEl.classList.add('visible');
+  try {
+    const res = await fetch(`https://api.modrinth.com/v2/search?query=${encodeURIComponent(q)}&limit=8&facets=${encodeURIComponent(JSON.stringify(facets))}`);
+    const data = await res.json();
+    resultsEl.innerHTML = '';
+    if (!data.hits?.length) {
+      resultsEl.innerHTML = '<div style="font-size:0.78rem;color:var(--muted);padding:10px 14px;">Ничего не найдено</div>';
+      return;
+    }
+    data.hits.forEach(hit => {
+      const already = mods.find(m => m.projectId === hit.project_id);
+      const el = document.createElement('div');
+      el.className = 'search-result-item' + (already ? ' added' : '');
+      el.id = 'sr-' + hit.project_id;
+      el.innerHTML = `
+        <div class="search-result-icon">${hit.icon_url ? `<img src="${hit.icon_url}" alt="">` : '📦'}</div>
+        <div class="search-result-info">
+          <div class="search-result-name">${esc(hit.title)}</div>
+          <div class="search-result-desc">${esc(hit.description || '')}</div>
+        </div>
+        <button class="search-result-add ${already ? 'added-tag' : ''}" onclick="addFromSearch(${JSON.stringify(hit).replace(/"/g,'&quot;')})" ${already ? 'disabled' : ''}>${already ? 'Добавлен' : '+ Добавить'}</button>
+      `;
+      resultsEl.appendChild(el);
+    });
+  } catch {
+    resultsEl.innerHTML = '<div style="font-size:0.78rem;color:var(--error);padding:10px 14px;">Ошибка поиска</div>';
+  }
+}
+
+function addFromSearch(hit) {
+  if (mods.find(m => m.projectId === hit.project_id)) return;
+  addMod({ name: hit.title, file: null, sourceKey: hit.project_id, projectId: hit.project_id, iconUrl: hit.icon_url });
+  const btn = document.querySelector(`#sr-${hit.project_id} .search-result-add`);
+  if (btn) { btn.textContent = 'Добавлен'; btn.disabled = true; btn.classList.add('added-tag'); }
+  document.getElementById('sr-' + hit.project_id)?.classList.add('added');
   showList();
 }
 
-// ── Mod management ────────────────────────────────────
+
+
+// ── Mod management ─────────────────────────────────────
 function addMod(data) {
   const id = Math.random().toString(36).slice(2);
-  const mod = { id, status: 'pending', downloadUrl: null, resolvedName: null, ...data };
+  const mod = { id, status: 'pending', downloadUrl: null, resolvedName: null, projectId: null, iconUrl: null, supportedVersions: [], supportedLoaders: [], fileSize: 0, ...data };
+  // Estimate file size
+  if (mod.file) mod.fileSize = mod.file.size || 0;
   mods.push(mod);
   renderMod(mod);
+  sortMods();
+}
+
+function sortMods() {
+  const list = document.getElementById('modList');
+  const sorted = [...mods].sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+  sorted.forEach(m => {
+    const el = document.getElementById('mod-' + m.id);
+    if (el) list.appendChild(el);
+  });
 }
 
 function renderMod(mod) {
   const el = document.createElement('div');
   el.className = 'mod-item';
   el.id = 'mod-' + mod.id;
+  const fileLabel = mod.file ? `<div class="mod-file">${esc(mod.file.name)}</div>` : '';
+  const icon = mod.iconUrl ? `<img src="${esc(mod.iconUrl)}" alt="">` : '📦';
   el.innerHTML = `
-    <div class="mod-icon" id="icon-${mod.id}">📦</div>
-    <div class="mod-info">
-      <div class="mod-name" id="name-${mod.id}">${esc(mod.name)}</div>
-      <div class="mod-file">${mod.file ? esc(mod.file.name) : 'текстовый ввод'}</div>
+    <div class="mod-top">
+      <div class="mod-icon" id="icon-${mod.id}">${icon}</div>
+      <div class="mod-middle">
+        <div class="mod-name" id="name-${mod.id}">${esc(mod.name)}</div>
+        ${fileLabel}
+      </div>
+      <div class="mod-right">
+        <span class="mod-status status-pending" id="status-${mod.id}">ожидание</span>
+        <div style="display:flex;gap:4px;">
+          <button class="info-btn" id="info-btn-${mod.id}" onclick="toggleInfo('${mod.id}')" title="Инфо" style="display:none;">ℹ</button>
+          <button class="remove-btn" onclick="removeMod('${mod.id}')" title="Удалить">✕</button>
+        </div>
+      </div>
     </div>
-    <span class="mod-status status-pending" id="status-${mod.id}">ожидание</span>
-    <button class="remove-btn" onclick="removeMod('${mod.id}')" title="Удалить">✕</button>
+    <div class="mod-bottom" id="modbottom-${mod.id}">
+      <div class="mod-bottom-row">
+        <div class="mod-left-links">
+          <span id="modrinth-link-${mod.id}"></span>
+          <span id="ver-toggle-wrap-${mod.id}"></span>
+        </div>
+        <div class="mod-loader-tags" id="modloaders-${mod.id}"></div>
+      </div>
+      <div class="ver-tags-list" id="vertags-${mod.id}"></div>
+      <div class="mod-info-popup hidden" id="info-popup-${mod.id}"></div>
+    </div>
   `;
   document.getElementById('modList').appendChild(el);
 }
 
 function removeMod(id) {
+  const mod = mods.find(m => m.id === id);
   mods = mods.filter(m => m.id !== id);
   document.getElementById('mod-' + id)?.remove();
   document.getElementById('modCount').textContent = mods.length;
+  updateZipSize();
   if (!mods.length) {
     document.getElementById('modListBlock').classList.add('hidden');
     document.getElementById('summaryBlock').classList.add('hidden');
-    document.getElementById('zipBtn').classList.add('hidden');
+    document.getElementById('zipSection').classList.add('hidden');
   }
   updateCheckBtn();
 }
@@ -397,7 +702,8 @@ function clearAll() {
   document.getElementById('modList').innerHTML = '';
   document.getElementById('modListBlock').classList.add('hidden');
   document.getElementById('summaryBlock').classList.add('hidden');
-  document.getElementById('zipBtn').classList.add('hidden');
+  document.getElementById('zipSection').classList.add('hidden');
+  document.getElementById('zipSize').textContent = '';
   updateCheckBtn();
 }
 
@@ -405,36 +711,58 @@ function showList() {
   document.getElementById('modListBlock').classList.remove('hidden');
   document.getElementById('modCount').textContent = mods.length;
   document.getElementById('summaryBlock').classList.add('hidden');
-  document.getElementById('zipBtn').classList.add('hidden');
+  document.getElementById('zipSection').classList.add('hidden');
   updateCheckBtn();
+  updateZipSize();
 }
 
 function updateCheckBtn() {
-  const ver = document.getElementById('versionSelect').value;
-  document.getElementById('checkBtn').disabled = !mods.length || !ver;
+  document.getElementById('checkBtn').disabled = !mods.length || !selectedVersion;
 }
-document.getElementById('versionSelect').addEventListener('change', updateCheckBtn);
 
-// ── Check ─────────────────────────────────────────────
+// ── Zip size display ───────────────────────────────────
+function updateZipSize() {
+  const total = mods.reduce((s, m) => s + (m.fileSize || 0), 0);
+  const el = document.getElementById('zipSize');
+  if (el && total > 0) el.textContent = 'примерный размер архива: ' + formatSize(total);
+}
+
+function formatSize(bytes) {
+  if (bytes > 1024*1024) return (bytes/1024/1024).toFixed(1) + ' МБ';
+  return (bytes/1024).toFixed(0) + ' КБ';
+}
+
+// ── Loader filter ──────────────────────────────────────
+function getActiveLoader() {
+  return document.querySelector('#loaderRow .loader-btn.active')?.dataset.loader || '';
+}
+function toggleLoader(btn) {
+  document.querySelectorAll('#loaderRow .loader-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ── Check ──────────────────────────────────────────────
 async function runCheck() {
-  const version = document.getElementById('versionSelect').value;
+  const version = selectedVersion;
   if (!version || !mods.length) return;
-
   const btn = document.getElementById('checkBtn');
-  btn.disabled = true;
-  btn.textContent = 'Проверяю...';
+  btn.disabled = true; btn.textContent = 'Проверяю...';
   document.getElementById('summaryBlock').classList.add('hidden');
-  document.getElementById('zipBtn').classList.add('hidden');
-
-  mods.forEach(m => { m.downloadUrl = null; setStatus(m, 'checking', 'проверка...'); });
+  document.getElementById('zipSection').classList.add('hidden');
+  mods.forEach(m => { m.downloadUrl = null; m.fileSize = m.file?.size || 0; setStatus(m, 'checking', 'проверка...'); });
 
   let ok = 0, warn = 0, fail = 0;
-
-  for (const mod of mods) {
-    const result = await checkMod(mod, version);
-    if (result === 'ok')      { ok++;   setStatus(mod, 'ok',   '✓ совместим'); }
-    else if (result === 'fail'){ fail++; setStatus(mod, 'fail', '✗ нет версии ' + version); }
-    else                       { warn++; setStatus(mod, 'warn', '? не найден'); }
+  // Run in parallel batches of 4 for speed
+  const BATCH = 4;
+  for (let i = 0; i < mods.length; i += BATCH) {
+    const batch = mods.slice(i, i + BATCH);
+    const results = await Promise.all(batch.map(m => checkMod(m, version)));
+    results.forEach((result, idx) => {
+      const mod = batch[idx];
+      if (result === 'ok')       { ok++;   setStatus(mod, 'ok',   '✓ совместим'); }
+      else if (result === 'fail'){ fail++; setStatus(mod, 'fail', '✗ нет ' + version); }
+      else                       { warn++; setStatus(mod, 'warn', '? не найден'); }
+    });
   }
 
   document.getElementById('countOk').textContent = ok;
@@ -442,11 +770,12 @@ async function runCheck() {
   document.getElementById('countFail').textContent = fail;
   document.getElementById('summaryBlock').classList.remove('hidden');
 
-  const hasDownloadable = mods.some(m => m.downloadUrl);
-  document.getElementById('zipBtn').classList.toggle('hidden', !hasDownloadable);
+  const hasDownload = mods.some(m => m.downloadUrl);
+  document.getElementById('zipSection').classList.toggle('hidden', !hasDownload);
+  updateZipSize();
 
-  btn.disabled = false;
-  btn.textContent = 'Проверить';
+  sortMods();
+  btn.disabled = false; btn.textContent = 'Проверить';
 }
 
 function setStatus(mod, type, text) {
@@ -459,81 +788,182 @@ function setStatus(mod, type, text) {
 }
 
 async function checkMod(mod, targetVersion) {
-  const query = mod.file ? cleanModName(mod.file.name) : mod.name;
+  const query = mod.projectId ? null : (mod.file ? cleanModName(mod.file.name) : mod.name);
+  const loader = getActiveLoader();
   try {
-    const searchRes = await fetch(`https://api.modrinth.com/v2/search?query=${encodeURIComponent(query)}&limit=5&facets=${encodeURIComponent(JSON.stringify([["project_type:mod"]]))}`);
-    if (!searchRes.ok) return 'unknown';
-    const searchData = await searchRes.json();
-    if (!searchData.hits?.length) return 'unknown';
+    let projectId = mod.projectId;
+    let iconUrl = mod.iconUrl;
+    let title = mod.name;
 
-    const project = searchData.hits[0];
-
-    // Обновить иконку
-    if (project.icon_url) {
-      const ic = document.getElementById('icon-' + mod.id);
-      if (ic) ic.innerHTML = `<img src="${project.icon_url}" alt="">`;
+    if (!projectId) {
+      // Try direct lookup by modId first (most accurate)
+      if (mod.modId) {
+        try {
+          const directRes = await fetch(`https://api.modrinth.com/v2/project/${mod.modId}`);
+          if (directRes.ok) {
+            const directData = await directRes.json();
+            projectId = directData.id;
+            iconUrl = directData.icon_url;
+            title = directData.title;
+          }
+        } catch {}
+      }
+      // Fallback to search
+      if (!projectId) {
+        const facets = [["project_type:mod"]];
+        if (loader) facets.push(["categories:" + loader]);
+        const sRes = await fetch(`https://api.modrinth.com/v2/search?query=${encodeURIComponent(query)}&limit=5&facets=${encodeURIComponent(JSON.stringify(facets))}`);
+        if (!sRes.ok) return 'unknown';
+        const sData = await sRes.json();
+        if (!sData.hits?.length) return 'unknown';
+        const hit = sData.hits[0];
+        projectId = hit.project_id;
+        iconUrl = hit.icon_url;
+        title = hit.title;
+      }
     }
-    // Обновить имя
+
+    // Update icon & name
+    if (iconUrl) {
+      const ic = document.getElementById('icon-' + mod.id);
+      if (ic) ic.innerHTML = `<img src="${esc(iconUrl)}" alt="">`;
+    }
     const nm = document.getElementById('name-' + mod.id);
-    if (nm) nm.textContent = project.title;
-    mod.resolvedName = project.title;
+    if (nm) nm.textContent = title;
+    mod.resolvedName = title;
+    mod.projectId = projectId;
 
-    // Проверить версии
-    const verRes = await fetch(`https://api.modrinth.com/v2/project/${project.project_id}/version?game_versions=${encodeURIComponent(JSON.stringify([targetVersion]))}`);
-    if (!verRes.ok) return 'fail';
-    const versions = await verRes.json();
-    if (!versions.length) return 'fail';
+    // Modrinth link
+    const linkEl = document.getElementById('modrinth-link-' + mod.id);
+    if (linkEl) linkEl.innerHTML = `<a href="https://modrinth.com/mod/${projectId}" target="_blank" class="modrinth-link">открыть на Modrinth ↗</a>`;
 
-    // Сохраняем ссылку на скачивание первого файла
-    const file = versions[0]?.files?.[0];
-    if (file?.url) mod.downloadUrl = { url: file.url, filename: file.filename };
+    // Fetch all versions in ONE request, filter locally — no extra request needed
+    let allVerUrl = `https://api.modrinth.com/v2/project/${projectId}/version`;
+    if (loader) allVerUrl += `?loaders=${encodeURIComponent(JSON.stringify([loader]))}`;
+    const allVerRes = await fetch(allVerUrl);
+    let allVers = [];
+    if (allVerRes.ok) allVers = await allVerRes.json();
 
-    return 'ok';
+    const gameVers = [...new Set(allVers.flatMap(v => v.game_versions))];
+    gameVers.sort((a, b) => b.localeCompare(a, undefined, {numeric: true}));
+    mod.supportedVersions = gameVers;
+    mod.supportedLoaders = [...new Set(allVers.flatMap(v => v.loaders || []))];
+
+    // Filter locally for target version — no extra HTTP request
+    const compatible_vers = allVers.filter(v =>
+      v.game_versions.includes(targetVersion) &&
+      (!loader || (v.loaders || []).includes(loader))
+    );
+    let compatible = compatible_vers.length > 0;
+    if (compatible) {
+      const file = compatible_vers[0]?.files?.[0];
+      if (file?.url) {
+        mod.downloadUrl = { url: file.url, filename: file.filename };
+        mod.fileSize = file.size || 0;
+      }
+    }
+
+    renderModExtras(mod);
+    return compatible ? 'ok' : 'fail';
   } catch { return 'unknown'; }
 }
 
-// ── ZIP download ──────────────────────────────────────
+function renderModExtras(mod) {
+  const bottom = document.getElementById('modbottom-' + mod.id);
+  if (bottom) bottom.classList.add('visible');
+
+  // Version toggle
+  const toggleWrap = document.getElementById('ver-toggle-wrap-' + mod.id);
+  const tagsEl = document.getElementById('vertags-' + mod.id);
+  if (toggleWrap && tagsEl && mod.supportedVersions?.length) {
+    const vers = mod.supportedVersions;
+    toggleWrap.innerHTML = `<button class="ver-toggle" onclick="toggleVersions('${mod.id}')">▸ версии (${vers.length})</button>`;
+    tagsEl.innerHTML = vers.map(v => {
+      const isSnap = /\d+w\d+[a-z]|alpha|beta|pre|rc/i.test(v);
+      return `<span class="ver-tag ${isSnap ? '' : 'release'}">${v}</span>`;
+    }).join('');
+  }
+
+  // Loader tags
+  const loadersEl = document.getElementById('modloaders-' + mod.id);
+  if (loadersEl && mod.supportedLoaders?.length) {
+    const known = ['fabric','forge','neoforge','quilt','liteloader'];
+    loadersEl.innerHTML = mod.supportedLoaders
+      .filter(l => known.includes(l))
+      .map(l => `<span class="loader-tag ${l}">${l}</span>`)
+      .join('');
+  }
+
+  // Show info button
+  const infoBtn = document.getElementById('info-btn-' + mod.id);
+  if (infoBtn) infoBtn.style.display = '';
+
+  // Fill info popup
+  const infoPopup = document.getElementById('info-popup-' + mod.id);
+  if (infoPopup) {
+    const minVer = mod.supportedVersions[mod.supportedVersions.length - 1] || '—';
+    const maxVer = mod.supportedVersions[0] || '—';
+    const loaders = mod.supportedLoaders.filter(l => ['fabric','forge','neoforge','quilt','liteloader'].includes(l));
+    const size = mod.fileSize ? formatSize(mod.fileSize) : '—';
+    infoPopup.innerHTML = `
+      <div class="info-row"><span class="info-label">Версии</span><span class="info-val">${esc(minVer)} — ${esc(maxVer)}</span></div>
+      <div class="info-row"><span class="info-label">Загрузчики</span><span class="info-val">${loaders.length ? loaders.join(', ') : '—'}</span></div>
+      <div class="info-row"><span class="info-label">Размер файла</span><span class="info-val">${size}</span></div>
+    `;
+  }
+}
+
+function toggleInfo(id) {
+  const popup = document.getElementById('info-popup-' + id);
+  const btn = document.getElementById('info-btn-' + id);
+  if (!popup) return;
+  const open = popup.classList.toggle('hidden');
+  if (btn) btn.classList.toggle('active', !open);
+  // Make sure bottom section is visible
+  document.getElementById('modbottom-' + id)?.classList.add('visible');
+}
+
+function toggleVersions(id) {
+  const el = document.getElementById('vertags-' + id);
+  const btn = document.querySelector(`#ver-toggle-wrap-${id} .ver-toggle`);
+  if (!el) return;
+  const open = el.classList.toggle('open');
+  if (btn) btn.textContent = (open ? '▾' : '▸') + btn.textContent.slice(1);
+}
+
+// ── ZIP download ───────────────────────────────────────
 async function downloadZip() {
   const btn = document.getElementById('zipBtn');
-  btn.disabled = true;
-  btn.textContent = '⏳ Собираю архив...';
-
-  const version = document.getElementById('versionSelect').value;
+  btn.disabled = true; btn.textContent = '⏳ Собираю архив...';
   const zip = new JSZip();
   const folder = zip.folder('mods');
-
-  const toDownload = mods.filter(m => m.downloadUrl);
-
-  for (const mod of toDownload) {
+  for (const mod of mods.filter(m => m.downloadUrl)) {
     try {
       const res = await fetch(mod.downloadUrl.url);
       const blob = await res.blob();
       folder.file(mod.downloadUrl.filename, blob);
-    } catch { /* пропустить если не удалось */ }
+    } catch {}
   }
-
   const content = await zip.generateAsync({ type: 'blob' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(content);
-  a.download = `mods-${version}.zip`;
+  a.download = `mods-${selectedVersion}.zip`;
   a.click();
   URL.revokeObjectURL(a.href);
-
-  btn.disabled = false;
-  btn.textContent = '⬇ Скачать совместимые моды (.zip)';
+  btn.disabled = false; btn.textContent = '⬇ Скачать совместимые моды (.zip)';
 }
 
-// ── Utils ─────────────────────────────────────────────
+// ── Utils ──────────────────────────────────────────────
 function cleanModName(filename) {
   return filename
-    .replace('.jar', '')
-    .replace(/[-_](forge|fabric|neoforge|quilt|bukkit|spigot)/gi, '')
-    .replace(/[-_]v?[\d.]+.*/g, '')
-    .replace(/[-_]+/g, ' ')
+    .replace('.jar','')
+    .replace(/[-_](forge|fabric|neoforge|quilt|bukkit|spigot)/gi,'')
+    .replace(/[-_]v?[\d.]+.*/g,'')
+    .replace(/[-_]+/g,' ')
     .trim();
 }
 function esc(str) {
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 </script>
 </body>
